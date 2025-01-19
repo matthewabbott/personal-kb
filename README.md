@@ -1,6 +1,6 @@
 # Personal Knowledge Base
 
-A webapp for exploring and searching my GitHub repositories, planned to be hosted on my webpage.
+A webapp for exploring and searching my GitHub repositories, hosted on my webpage.
 
 ## (Planned) System Architecture
 
@@ -73,4 +73,23 @@ npm run dev
 
 ## Deployment
 
-The application is (TODO: slated to be) deployed at [mbabbott.com/personal-kb](https://mbabbott.com/personal-kb)
+The application is deployed at [mbabbott.com/personal-kb](https://mbabbott.com/personal-kb)
+
+```
+# Clone the repo for development/building
+cd /root
+git clone https://github.com/matthewabbott/personal-kb.git
+cd personal-kb
+
+# Create the production directory
+mkdir -p /var/www/html/personal-kb/data
+
+# Build the project
+npm install
+npm run build
+
+# Copy the built files to the web directory
+cp -r dist/* /var/www/html/personal-kb/`
+
+# Make data cache script executable
+chmod +x /root/update-github-cache.sh

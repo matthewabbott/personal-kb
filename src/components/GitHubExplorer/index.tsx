@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { Search, Folder } from 'lucide-react'
+import { Search, Folder, Star, GitFork, HardDrive } from 'lucide-react'
+import { LanguageStats } from './LanguageStats'
 
 // Define our types
 interface Repository {
@@ -8,8 +9,14 @@ interface Repository {
   description: string | null
   html_url: string
   language: string | null
+  languages_url: string
   updated_at: string
   pushed_at: string
+  created_at: string
+  stargazers_count: number
+  forks_count: number
+  size: number
+  languages_data?: Record<string, number>  // Will store language stats
   latest_commit?: {
     commit: {
       author: {
@@ -28,13 +35,33 @@ export function GitHubExplorer() {
   useEffect(() => {
     const fetchRepos = async () => {
       try {
+        setLoading(true)
+        // Use GitHub API when in dev mode
         const response = await fetch('https://api.github.com/users/matthewabbott/repos?per_page=100')
         if (!response.ok) throw new Error('Failed to fetch repositories')
         
         const data = await response.json()
-        console.log('Raw repo data:', data)
+        
+        // Fetch language data for each repository
+        const reposWithLanguages = await Promise.all(
+          data.map(async (repo) => {
+            if (!repo.language) return repo
+            
+            try {
+              const langResponse = await fetch(repo.languages_url)
+              if (langResponse.ok) {
+                const langData = await langResponse.json()
+                return { ...repo, languages_data: langData }
+              }
+            } catch (err) {
+              console.error(`Failed to fetch languages for ${repo.name}:`, err)
+            }
+            return repo
+          })
+        )
+        
         // Sort repos by pushed_at date
-        const sortedRepos = [...data].sort((a, b) => {
+        const sortedRepos = [...reposWithLanguages].sort((a, b) => {
           return new Date(b.pushed_at).getTime() - new Date(a.pushed_at).getTime()
         })
         setRepos(sortedRepos)
@@ -86,10 +113,32 @@ export function GitHubExplorer() {
                 {repo.description && (
                   <p className="mt-1 text-gray-600">{repo.description}</p>
                 )}
-                <div className="mt-2 text-sm text-gray-500 space-y-1">
-                  {repo.language && <div>Language: {repo.language}</div>}
-                  <div>
-                    Last updated: {new Date(repo.pushed_at).toLocaleDateString()}
+                <div className="mt-4 space-y-3">
+                  {/* Language Statistics */}
+                  {repo.languages_data && (
+                    <LanguageStats languages={repo.languages_data} />
+                  )}
+                  
+                  {/* Repository Stats */}
+                  <div className="flex flex-wrap gap-4 text-sm text-gray-600">
+                    <div className="flex items-center gap-1">
+                      <Star className="w-4 h-4" />
+                      {repo.stargazers_count} stars
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <GitFork className="w-4 h-4" />
+                      {repo.forks_count} forks
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <HardDrive className="w-4 h-4" />
+                      {(repo.size / 1024).toFixed(1)} MB
+                    </div>
+                  </div>
+                  
+                  {/* Dates */}
+                  <div className="text-sm text-gray-500 space-y-1">
+                    <div>Created: {new Date(repo.created_at).toLocaleDateString()}</div>
+                    <div>Last pushed: {new Date(repo.pushed_at).toLocaleDateString()}</div>
                   </div>
                 </div>
               </div>

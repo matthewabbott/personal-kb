@@ -15,7 +15,7 @@ flowchart TD
         P --> |Save| C[Cached JSON]
         subgraph "Web Server"
             FE[React Frontend] --> |Read| C
-            FE --> |Lazy Load| GH
+            FE --> |Fallback| GH
         end
     end
 

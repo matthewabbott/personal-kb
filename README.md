@@ -2,7 +2,7 @@
 
 A webapp for exploring and searching my GitHub repositories, hosted on my webpage.
 
-## (Planned) System Architecture
+## System Architecture
 
 ```mermaid
 flowchart TD
@@ -10,14 +10,13 @@ flowchart TD
         GH[GitHub Repos]
     end
 
-    subgraph "GitHub Action"
-        GA[Scheduled Action] --> |Fetch Repo Data| P[Process & Cache]
+    subgraph "VPS Server"
+        CRON[Hourly Cron Job] --> |Fetch Repo Data| P[Process & Cache]
         P --> |Save| C[Cached JSON]
-    end
-
-    subgraph "Web Application"
-        FE[React Frontend] --> |Read| C
-        FE --> |Lazy Load| GH
+        subgraph "Web Server"
+            FE[React Frontend] --> |Read| C
+            FE --> |Lazy Load| GH
+        end
     end
 
     subgraph "Future Extensions"
@@ -28,13 +27,13 @@ flowchart TD
 ## Features
 
 ### Current
-Uhhh, look we're still a bit early, alright...
-
-### Planned
 - GitHub repository explorer
   - Repository metadata display
   - Search functionality
-  - Cached data updates via GitHub Actions
+  - Real-time sorting by last commit date
+  - Cached data updates via VPS cron job
+
+### Planned
 - Repository content exploration
   - README previews
   - File browser
@@ -43,6 +42,7 @@ Uhhh, look we're still a bit early, alright...
   - Language distribution
   - Commit activity
   - Contribution graphs
+- Additional knowledge sources integration
 
 ## Technical Stack
 
@@ -51,7 +51,7 @@ Uhhh, look we're still a bit early, alright...
 - **UI Components**: Radix UI
 - **Icons**: Lucide React
 - **Deployment**: NGINX on VPS
-- **Data Updates**: GitHub Actions
+- **Data Updates**: Hourly cron job
 
 ## Development
 
@@ -71,11 +71,14 @@ npm install
 npm run dev
 ```
 
-## Deployment
+## Production Deployment
 
 The application is deployed at [mbabbott.com/personal-kb](https://mbabbott.com/personal-kb)
 
-```
+### Deployment Steps
+
+1. Clone and build:
+```bash
 # Clone the repo for development/building
 cd /root
 git clone https://github.com/matthewabbott/personal-kb.git
@@ -89,7 +92,38 @@ npm install
 npm run build
 
 # Copy the built files to the web directory
-cp -r dist/* /var/www/html/personal-kb/`
+cp -r dist/* /var/www/html/personal-kb/
+```
 
+2. Set up data caching:
+```bash
 # Make data cache script executable
 chmod +x /root/update-github-cache.sh
+
+# Add to crontab to run hourly
+crontab -e
+# Add: 0 * * * * /root/personal-kb/update-github-cache.sh
+```
+
+3. Configure nginx:
+```nginx
+# Add to your nginx configuration
+	location /personal-kb {
+		alias /var/www/html/personal-kb;
+		try_files $uri $uri/ /personal-kb/index.html;
+		
+		location ~* \.js$ {
+			add_header Content-Type application/javascript;
+		}
+		
+		location ~* \.css$ {
+			add_header Content-Type text/css;
+		}
+	}
+
+	location /personal-kb/data/ {
+		alias /var/www/html/personal-kb/data/;
+		add_header Cache-Control "no-cache";
+		add_header Access-Control-Allow-Origin "*";
+	}
+```

@@ -8,6 +8,13 @@ interface Repository {
   html_url: string
   language: string | null
   updated_at: string
+  latest_commit?: {
+    commit: {
+      author: {
+        date: string
+      }
+    }
+  }
 }
 
 export function GitHubExplorer() {
@@ -19,7 +26,7 @@ export function GitHubExplorer() {
   useEffect(() => {
     const fetchRepos = async () => {
       try {
-        // Fallback to GitHub API in dev mode
+        // Fall back to GitHub API only in dev mode
         const isDev = import.meta.env.DEV
         const response = await fetch(
           isDev 
@@ -80,7 +87,7 @@ export function GitHubExplorer() {
                 )}
                 <div className="mt-2 text-sm text-gray-500">
                   {repo.language && <span className="mr-4">Language: {repo.language}</span>}
-                  <span>Updated: {new Date(repo.updated_at).toLocaleDateString()}</span>
+                  <span>Last commit: {new Date(repo.latest_commit?.commit?.author?.date || repo.updated_at).toLocaleDateString()}</span>
                 </div>
               </div>
               <a

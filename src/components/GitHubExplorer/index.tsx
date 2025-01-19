@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Search, Code, Folder } from 'lucide-react'
 
+// Define our types
 interface Repository {
   id: number
   name: string
@@ -36,7 +37,14 @@ export function GitHubExplorer() {
         if (!response.ok) throw new Error('Failed to fetch repositories')
         
         const data = await response.json()
-        setRepos(data)
+        console.log('Raw repo data:', data)
+        // Sort repos by latest commit date
+        const sortedRepos = [...data].sort((a, b) => {
+          const dateA = a.latest_commit?.commit?.author?.date || a.updated_at
+          const dateB = b.latest_commit?.commit?.author?.date || b.updated_at
+          return new Date(dateB).getTime() - new Date(dateA).getTime()
+        })
+        setRepos(sortedRepos)
       } catch (err) {
         setError('Error loading repositories. Please try again later.')
       } finally {
@@ -85,9 +93,17 @@ export function GitHubExplorer() {
                 {repo.description && (
                   <p className="mt-1 text-gray-600">{repo.description}</p>
                 )}
-                <div className="mt-2 text-sm text-gray-500">
-                  {repo.language && <span className="mr-4">Language: {repo.language}</span>}
-                  <span>Last commit: {new Date(repo.latest_commit?.commit?.author?.date || repo.updated_at).toLocaleDateString()}</span>
+                <div className="mt-2 text-sm text-gray-500 space-y-1">
+                  {repo.language && <div>Language: {repo.language}</div>}
+                  <div>
+                    Last commit: {repo.latest_commit?.commit?.author?.date 
+                      ? new Date(repo.latest_commit.commit.author.date).toLocaleString()
+                      : 'Unknown'
+                    }
+                  </div>
+                  <div className="text-xs text-gray-400">
+                    Debug - updated_at: {new Date(repo.updated_at).toLocaleString()}
+                  </div>
                 </div>
               </div>
               <a

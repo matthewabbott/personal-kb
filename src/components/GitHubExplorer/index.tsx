@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
-import { Search, Code, Folder } from 'lucide-react'
+import { Search, Folder } from 'lucide-react'
 
+// Define our types
 interface Repository {
   id: number
   name: string

@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { GitHubExplorer } from './components/GitHubExplorer'
 
 function App() {

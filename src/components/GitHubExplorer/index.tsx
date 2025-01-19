@@ -17,10 +17,15 @@ export function GitHubExplorer() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    // TODO: cache data so it doesn't have to get fetched every time
     const fetchRepos = async () => {
       try {
-        const response = await fetch('https://api.github.com/users/matthewabbott/repos')
+        // Fallback to GitHub API in dev mode
+        const isDev = import.meta.env.DEV
+        const response = await fetch(
+          isDev 
+            ? 'https://api.github.com/users/matthewabbott/repos'
+            : '/data/repos.json'
+        )
         if (!response.ok) throw new Error('Failed to fetch repositories')
         
         const data = await response.json()

@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Search, Code, Folder } from 'lucide-react'
 
-// Define our types
 interface Repository {
   id: number
   name: string
@@ -9,6 +8,7 @@ interface Repository {
   html_url: string
   language: string | null
   updated_at: string
+  pushed_at: string
   latest_commit?: {
     commit: {
       author: {
@@ -27,22 +27,14 @@ export function GitHubExplorer() {
   useEffect(() => {
     const fetchRepos = async () => {
       try {
-        // Fall back to GitHub API only in dev mode
-        const isDev = import.meta.env.DEV
-        const response = await fetch(
-          isDev 
-            ? 'https://api.github.com/users/matthewabbott/repos'
-            : '/data/repos.json'
-        )
+        const response = await fetch('https://api.github.com/users/matthewabbott/repos?per_page=100')
         if (!response.ok) throw new Error('Failed to fetch repositories')
         
         const data = await response.json()
         console.log('Raw repo data:', data)
-        // Sort repos by latest commit date
+        // Sort repos by pushed_at date
         const sortedRepos = [...data].sort((a, b) => {
-          const dateA = a.latest_commit?.commit?.author?.date || a.updated_at
-          const dateB = b.latest_commit?.commit?.author?.date || b.updated_at
-          return new Date(dateB).getTime() - new Date(dateA).getTime()
+          return new Date(b.pushed_at).getTime() - new Date(a.pushed_at).getTime()
         })
         setRepos(sortedRepos)
       } catch (err) {
@@ -96,13 +88,7 @@ export function GitHubExplorer() {
                 <div className="mt-2 text-sm text-gray-500 space-y-1">
                   {repo.language && <div>Language: {repo.language}</div>}
                   <div>
-                    Last commit: {repo.latest_commit?.commit?.author?.date 
-                      ? new Date(repo.latest_commit.commit.author.date).toLocaleString()
-                      : 'Unknown'
-                    }
-                  </div>
-                  <div className="text-xs text-gray-400">
-                    Debug - updated_at: {new Date(repo.updated_at).toLocaleString()}
+                    Last updated: {new Date(repo.pushed_at).toLocaleDateString()}
                   </div>
                 </div>
               </div>

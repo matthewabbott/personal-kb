@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Search, Folder, ChevronDown, ChevronRight } from 'lucide-react'
+import { Search, Folder, ChevronDown, ChevronRight, FileText } from 'lucide-react'
 import { MarkdownRenderer } from '../MarkdownRenderer'
 
 interface Repository {
@@ -10,12 +10,26 @@ interface Repository {
   language: string | null
   pushed_at: string
   default_branch: string
+  readme_preview?: string | null
 }
 
 interface ExpandedRepo {
   id: number
   readme: string | null
   loading: boolean
+}
+
+const truncateMarkdown = (markdown: string, maxLength: number = 150) => {
+  const lines = markdown.split('\n')
+  let truncated = lines[0]  // Get first line
+  
+  // Remove markdown headers
+  truncated = truncated.replace(/^#+\s/, '')
+  
+  if (truncated.length > maxLength) {
+    return truncated.slice(0, maxLength) + '...'
+  }
+  return truncated + (lines.length > 1 ? '...' : '')
 }
 
 export function GitHubExplorer() {
@@ -35,7 +49,24 @@ export function GitHubExplorer() {
         const sortedRepos = [...data].sort((a, b) => {
           return new Date(b.pushed_at).getTime() - new Date(a.pushed_at).getTime()
         })
-        setRepos(sortedRepos)
+
+        // Fetch README previews for all repos
+        const reposWithPreviews = await Promise.all(
+          sortedRepos.map(async (repo) => {
+            const readmeResponse = await fetch(
+              `https://api.github.com/repos/matthewabbott/${repo.name}/readme`,
+              { headers: { 'Accept': 'application/vnd.github.raw' } }
+            )
+            
+            if (readmeResponse.ok) {
+              const readme = await readmeResponse.text()
+              return { ...repo, readme_preview: truncateMarkdown(readme) }
+            }
+            return { ...repo, readme_preview: null }
+          })
+        )
+
+        setRepos(reposWithPreviews)
       } catch (err) {
         setError('Error loading repositories. Please try again later.')
       } finally {
@@ -47,25 +78,19 @@ export function GitHubExplorer() {
   }, [])
 
   const fetchReadme = async (repo: Repository) => {
-    try {
-      setExpandedRepo({ id: repo.id, readme: null, loading: true })
-      const response = await fetch(
-        `https://api.github.com/repos/matthewabbott/${repo.name}/readme`,
-        { headers: { 'Accept': 'application/vnd.github.raw' } }
-      )
-      
-      if (!response.ok) {
-        if (response.status === 404) {
-          setExpandedRepo({ id: repo.id, readme: '# No README found', loading: false })
-          return
-        }
-        throw new Error('Failed to fetch README')
-      }
-      
+    setExpandedRepo({ id: repo.id, readme: null, loading: true })
+    
+    const response = await fetch(
+      `https://api.github.com/repos/matthewabbott/${repo.name}/readme`,
+      { headers: { 'Accept': 'application/vnd.github.raw' } }
+    )
+    
+    if (response.ok) {
       const readme = await response.text()
       setExpandedRepo({ id: repo.id, readme, loading: false })
-    } catch (err) {
-      setExpandedRepo({ id: repo.id, readme: '# Error loading README', loading: false })
+    } else {
+      // Don't show any message for 404s
+      setExpandedRepo(null)
     }
   }
 
@@ -87,7 +112,6 @@ export function GitHubExplorer() {
 
   return (
     <div className="space-y-4">
-      {/* Search bar */}
       <div className="relative">
         <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
         <input
@@ -99,14 +123,12 @@ export function GitHubExplorer() {
         />
       </div>
 
-      {/* Repository list */}
       <div className="grid gap-4">
         {filteredRepos.map(repo => (
           <div
             key={repo.id}
             className="bg-white rounded-lg border hover:shadow-md transition-shadow"
           >
-            {/* Repository header */}
             <div
               className="p-4 cursor-pointer"
               onClick={() => handleRepoClick(repo)}
@@ -120,9 +142,20 @@ export function GitHubExplorer() {
                     }
                     <Folder className="w-4 h-4" />
                     {repo.name}
+                    {repo.readme_preview && (
+                      <FileText className="w-4 h-4 text-gray-400" />
+                    )}
                   </h3>
                   {repo.description && (
                     <p className="mt-1 text-gray-600">{repo.description}</p>
+                  )}
+                  {repo.readme_preview && expandedRepo?.id !== repo.id && (
+                    <div className="mt-2 text-sm text-gray-500 bg-gray-50 p-2 rounded">
+                      {repo.readme_preview}
+                      <button className="text-blue-500 hover:text-blue-600 ml-2 font-medium">
+                        Show More
+                      </button>
+                    </div>
                   )}
                   <div className="mt-2 text-sm text-gray-500">
                     {repo.language && <span className="mr-4">Language: {repo.language}</span>}
@@ -141,7 +174,6 @@ export function GitHubExplorer() {
               </div>
             </div>
 
-            {/* README section */}
             {expandedRepo?.id === repo.id && (
               <div className="border-t px-4 py-3">
                 {expandedRepo.loading ? (

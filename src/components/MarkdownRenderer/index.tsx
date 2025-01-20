@@ -1,8 +1,8 @@
 // src/components/MarkdownRenderer/index.tsx
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
-import { nightOwl } from 'react-syntax-highlighter/dist/esm/styles/prism'
+import { nightOwl, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import mermaid from 'mermaid'
 
 // Initialize mermaid with specific config
@@ -54,6 +54,29 @@ const MermaidRenderer = ({ content }: { content: string }) => {
 }
 
 export function MarkdownRenderer({ content }: MarkdownRendererProps) {
+  // Track the current theme
+  const [isDarkMode, setIsDarkMode] = useState(() => 
+    document.documentElement.getAttribute('data-theme') === 'dark'
+  )
+
+  // Update theme state when it changes
+  useEffect(() => {
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.attributeName === 'data-theme') {
+          setIsDarkMode(document.documentElement.getAttribute('data-theme') === 'dark')
+        }
+      })
+    })
+
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['data-theme']
+    })
+
+    return () => observer.disconnect()
+  }, [])
+
   return (
     <ReactMarkdown
       components={{
@@ -72,15 +95,23 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
           return !inline ? (
             <SyntaxHighlighter
               {...props}
-              style={nightOwl}
+              style={isDarkMode ? nightOwl : oneLight}
               language={language}
               PreTag="div"
               className="markdown-code"
+              customStyle={{
+                backgroundColor: 'var(--color-bg-secondary)',
+                margin: '1.5em 0',
+                borderRadius: '0.375rem',
+              }}
             >
               {String(children).replace(/\n$/, '')}
             </SyntaxHighlighter>
           ) : (
-            <code {...props} className={className}>
+            <code 
+              {...props} 
+              className={`${className} bg-[var(--color-bg-secondary)] rounded px-1`}
+            >
               {children}
             </code>
           )

@@ -22,28 +22,6 @@ flowchart TD
     end
 ```
 
-## Project Structure
-
-```mermaid
-flowchart TD
-    src[src/] --> assets
-    src --> components
-    src --> styles
-    src --> utils
-
-    components --> gh[GitHubExplorer/]
-    components --> md[MarkdownRenderer/]
-    gh --> ghIndex[index.tsx]
-    gh --> langStats[LanguageStats.tsx]
-    md --> mdIndex[index.tsx]
-
-    styles --> indexCss[index.css]
-    utils --> cache[cache.ts]
-
-    root["/"] --> main[main.tsx]
-    root --> app[App.tsx]
-```
-
 ## Features
 
 - GitHub repository explorer with search and metadata display
@@ -86,6 +64,28 @@ npm run dev
 - Code snippet search
 - Extended repository statistics
 - Integration with additional knowledge sources
+
+## Directory Structure
+
+```
+personal-kb/
+├── src/
+│   ├── components/                     # React components
+│   │   ├── GitHubExplorer/            # Main repository explorer component
+│   │   │   ├── index.tsx              # Repository listing and search
+│   │   │   └── LanguageStats.tsx      # Language distribution visualization
+│   │   └── MarkdownRenderer/          # Repo README rendering component
+│   │       └── index.tsx              # Markdown with code highlighting & diagrams
+│   ├── styles/
+│   │   └── index.css                  # Global styles and Tailwind configuration
+│   ├── utils/
+│   │   └── cache.ts                   # LocalStorage caching implementation
+│   ├── App.tsx                        # Root application component
+│   └── main.tsx                       # Application entry point
+├── index.html                         # HTML entry point
+├── tailwind.config.js                 # Tailwind CSS configuration
+└── package.json                       # Project dependencies and scripts
+```
 
 ## Production Deployment
 

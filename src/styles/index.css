@@ -5,22 +5,21 @@
 
 /* Base theme variables */
 @layer base {
-  :root {
-    /* Light theme */
-    --color-bg-primary: #f8f3e9;
-    --color-bg-secondary: #ffffff;
-    --color-text-primary: #2c1810;
-    --color-text-secondary: #6b4d3c;
-    --color-border: #d4c5b9;
-    --color-accent: #843729;
-    --color-accent-hover: #6b2c21;
-    --color-error-bg: #f8e6e6;
-    --color-error-border: #843729;
-    --color-shadow: rgba(0, 0, 0, 0.1);
-  }
-
-  @media (prefers-color-scheme: dark) {
     :root {
+      /* Light theme */
+      --color-bg-primary: #f8f3e9;
+      --color-bg-secondary: #fff;
+      --color-text-primary: #2c1810;
+      --color-text-secondary: #6b4d3c;
+      --color-border: #d4c5b9;
+      --color-accent: #843729;
+      --color-accent-hover: #6b2c21;
+      --color-error-bg: #f8e6e6;
+      --color-error-border: #843729;
+      --color-shadow: rgba(0, 0, 0, 0.1);
+    }
+  
+    :root[data-theme="dark"] {
       --color-bg-primary: #1a1614;
       --color-bg-secondary: #252220;
       --color-text-primary: #e6ddd6;
@@ -32,7 +31,6 @@
       --color-error-border: #c25b4a;
       --color-shadow: rgba(0, 0, 0, 0.3);
     }
-  }
 
   body {
     @apply bg-[var(--color-bg-primary)] text-[var(--color-text-primary)];
@@ -44,6 +42,17 @@
 
 /* Components */
 @layer components {
+  /* darkmode toggle */
+  .theme-toggle {
+    @apply fixed top-4 right-4 
+            p-2 rounded-full
+            bg-[var(--color-bg-secondary)]
+            border border-[var(--color-border)]
+            text-[var(--color-text-secondary)]
+            hover:text-[var(--color-accent)]
+            transition-colors
+            cursor-pointer;
+    }
   /* Layout components */
   .logo {
     @apply h-24 p-6;
@@ -103,7 +112,7 @@
 
   /* Language stats components */
   .language-bar {
-    @apply h-2 flex gap-0.5 rounded-full overflow-hidden bg-gray-100 w-64;
+    @apply h-2 flex gap-0.5 rounded-full overflow-hidden w-64 bg-[var(--color-bg-primary)];
   }
 
   .language-segment {

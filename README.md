@@ -1,57 +1,65 @@
 # Personal Knowledge Base
 
-A webapp for exploring and searching my GitHub repositories, hosted on my webpage.
+A React application for exploring and searching GitHub repositories, providing an organized view of repository metadata with README previews and language statistics.
 
 ## System Architecture
 
 ```mermaid
 flowchart TD
     subgraph GitHub
-        GH[GitHub Repos]
+        GH[GitHub API] --> |Fetch Repos| FE
+        GH --> |Fetch READMEs| FE
     end
 
-    subgraph "VPS Server"
-        CRON[Hourly Cron Job] --> |Fetch Repo Data| P[Process & Cache]
-        P --> |Save| C[Cached JSON]
-        subgraph "Web Server"
-            FE[React Frontend] --> |Read| C
-            FE --> |Fallback| GH
-        end
+    subgraph "Browser"
+        FE[React Frontend] --> |Store| LC[LocalStorage Cache]
+        LC --> |Read| FE
     end
 
-    subgraph "Future Extensions"
-        FE -.-> |Potential| OT[Other Sources]
+    subgraph "Components"
+        FE --> |Renders| MD[Markdown]
+        FE --> |Renders| LS[Language Stats]
     end
+```
+
+## Project Structure
+
+```mermaid
+flowchart TD
+    src[src/] --> assets
+    src --> components
+    src --> styles
+    src --> utils
+
+    components --> gh[GitHubExplorer/]
+    components --> md[MarkdownRenderer/]
+    gh --> ghIndex[index.tsx]
+    gh --> langStats[LanguageStats.tsx]
+    md --> mdIndex[index.tsx]
+
+    styles --> indexCss[index.css]
+    utils --> cache[cache.ts]
+
+    root["/"] --> main[main.tsx]
+    root --> app[App.tsx]
 ```
 
 ## Features
 
-### Current
-- GitHub repository explorer
-  - Repository metadata display
-  - Search functionality
-  - Real-time sorting by last commit date
-  - Cached data updates via VPS cron job
-
-### Planned
-- Repository content exploration
-  - README previews
-  - File browser
-  - Code snippet search
-- Repository statistics
-  - Language distribution
-  - Commit activity
-  - Contribution graphs
-- Additional knowledge sources integration
+- GitHub repository explorer with search and metadata display
+- Markdown rendering with code highlighting and diagram support
+- Language statistics visualization
+- Client-side caching
+- Dark/light theme support
 
 ## Technical Stack
 
-- **Frontend**: React + TypeScript
-- **Build Tool**: Vite
-- **UI Components**: Radix UI
-- **Icons**: Lucide React
-- **Deployment**: NGINX on VPS
-- **Data Updates**: Hourly cron job
+- React + TypeScript
+- Vite
+- Tailwind CSS
+- Lucide React icons
+- react-markdown
+- Mermaid.js
 
 ## Development
 
@@ -70,6 +78,14 @@ npm install
 ```bash
 npm run dev
 ```
+
+## Future Enhancements
+
+- Server-side caching
+- File browser functionality
+- Code snippet search
+- Extended repository statistics
+- Integration with additional knowledge sources
 
 ## Production Deployment
 

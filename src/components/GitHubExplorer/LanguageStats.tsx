@@ -1,30 +1,27 @@
-// src/components/LanguageStats.tsx
-import React from 'react'
-
-// Language colors from GitHub
+// src/components/GitHubExplorer/LanguageStats.tsx
 const languageColors: Record<string, string> = {
-  TypeScript: '#3178c6',
-  JavaScript: '#f1e05a',
-  Python: '#3572A5',
-  HTML: '#e34c26',
-  CSS: '#563d7c',
-  Ruby: '#701516',
-  Go: '#00ADD8',
-  Java: '#b07219',
-  Shell: '#89e051',
-  PHP: '#4F5D95',
-  C: '#555555',
-  'C++': '#f34b7d',
-  Rust: '#dea584',
-  Svelte: '#ff3e00',
-}
-
-const DEFAULT_LANGUAGE_COLOR = '#8b949e'  // Default gray for unlisted languages
-
-interface LanguageStatsProps {
-  languages: Record<string, number>
-}
-
+    TypeScript: '#3178c6',
+    JavaScript: '#f1e05a',
+    Python: '#3572A5',
+    HTML: '#e34c26',
+    CSS: '#563d7c',
+    Ruby: '#701516',
+    Go: '#00ADD8',
+    Java: '#b07219',
+    Shell: '#89e051',
+    PHP: '#4F5D95',
+    C: '#555555',
+    'C++': '#f34b7d',
+    Rust: '#dea584',
+    Svelte: '#ff3e00',
+  }
+  
+  const DEFAULT_LANGUAGE_COLOR = '#8b949e'  // Default gray for unlisted languages
+  
+  interface LanguageStatsProps {
+    languages: Record<string, number>
+  }
+  
 export function LanguageStats({ languages }: LanguageStatsProps) {
   // Return null if no languages data is provided
   if (!languages || Object.keys(languages).length === 0) return null

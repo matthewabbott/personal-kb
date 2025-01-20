@@ -1,5 +1,7 @@
+// src/App.tsx
 import { GitHubExplorer } from './components/GitHubExplorer'
 import { ThemeToggle } from './components/ThemeToggle'
+import { CachePurge } from './components/CachePurge'
 
 function App() {
   return (
@@ -10,6 +12,7 @@ function App() {
           Personal Knowledge Base
         </h1>
         <GitHubExplorer />
+        <CachePurge />
       </div>
     </div>
   )

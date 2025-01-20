@@ -1,3 +1,4 @@
+// src/utils/cache.ts
 interface CacheItem<T> {
     data: T;
     timestamp: number;

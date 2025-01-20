@@ -1,3 +1,4 @@
+// src/components/MarkdownRenderer/index.tsx
 import { useEffect, useRef } from 'react'
 import ReactMarkdown from 'react-markdown'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
@@ -49,12 +50,7 @@ const MermaidRenderer = ({ content }: { content: string }) => {
     renderDiagram()
   }, [content])
 
-  return (
-    <div 
-      ref={elementRef} 
-      className="my-4 flex justify-center"
-    />
-  )
+  return <div ref={elementRef} className="markdown-diagram" />
 }
 
 export function MarkdownRenderer({ content }: MarkdownRendererProps) {
@@ -79,7 +75,7 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
               style={nightOwl}
               language={language}
               PreTag="div"
-              className="rounded-md"
+              className="markdown-code"
             >
               {String(children).replace(/\n$/, '')}
             </SyntaxHighlighter>
@@ -90,10 +86,10 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
           )
         },
         h1: ({ children }) => (
-          <h1 className="text-2xl font-bold mt-6 mb-4">{children}</h1>
+          <h1 className="markdown-heading-1">{children}</h1>
         ),
         h2: ({ children }) => (
-          <h2 className="text-xl font-bold mt-5 mb-3">{children}</h2>
+          <h2 className="markdown-heading-2">{children}</h2>
         ),
       }}
     >

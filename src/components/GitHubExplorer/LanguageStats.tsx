@@ -1,3 +1,4 @@
+// src/components/LanguageStats.tsx
 import React from 'react'
 
 // Language colors from GitHub
@@ -25,6 +26,7 @@ interface LanguageStatsProps {
 }
 
 export function LanguageStats({ languages }: LanguageStatsProps) {
+  // Return null if no languages data is provided
   if (!languages || Object.keys(languages).length === 0) return null
 
   // Calculate total bytes across all languages
@@ -33,43 +35,45 @@ export function LanguageStats({ languages }: LanguageStatsProps) {
   return (
     <div className="mt-3">
       {/* Language bar with standardized width */}
-      <div className="h-2 flex gap-0.5 rounded-full overflow-hidden bg-gray-100 w-64">  {/* Added w-64 for fixed width */}
+      <div className="language-bar">
         {Object.entries(languages)
           .sort(([, a], [, b]) => b - a) // Sort by byte count
-          .map(([lang, bytes], index) => {
+          .map(([lang, bytes]) => {
             const percentage = (bytes / total) * 100
             if (percentage < 1) return null // Don't show very small percentages
             
             return (
               <div
                 key={lang}
+                className="language-segment"
                 style={{
                   width: `${percentage}%`,
                   backgroundColor: languageColors[lang] || DEFAULT_LANGUAGE_COLOR,
                 }}
-                className="first:rounded-l-full last:rounded-r-full"
                 title={`${lang}: ${percentage.toFixed(1)}%`}
               />
             )
           })}
       </div>
       
-      {/* Language labels */}
-      <div className="mt-2 flex flex-wrap gap-3 text-sm">
+      {/* Language labels with percentages */}
+      <div className="language-labels">
         {Object.entries(languages)
           .sort((a, b) => b[1] - a[1])  // Sort by byte count
           .map(([lang, bytes]) => {
             const percentage = (bytes / total) * 100
-            if (percentage < 1) return null
+            if (percentage < 1) return null // Skip small percentages in labels
             
             return (
-              <div key={lang} className="flex items-center gap-1">
+              <div key={lang} className="language-label">
                 <span
-                  className="w-3 h-3 rounded-full"
-                  style={{ backgroundColor: languageColors[lang] || DEFAULT_LANGUAGE_COLOR }}
+                  className="language-dot"
+                  style={{
+                    backgroundColor: languageColors[lang] || DEFAULT_LANGUAGE_COLOR
+                  }}
                 />
                 <span>{lang}</span>
-                <span className="text-gray-500">
+                <span className="language-percentage">
                   {percentage.toFixed(1)}%
                 </span>
               </div>

@@ -1,3 +1,4 @@
+// src/components/GitHubExplorer/index.tsx
 import { useState, useEffect } from 'react'
 import { Search, Folder, ChevronDown, ChevronRight, FileText } from 'lucide-react'
 import { MarkdownRenderer } from '../MarkdownRenderer'
@@ -180,74 +181,85 @@ export function GitHubExplorer() {
 
   return (
     <div className="space-y-4">
+      {/* Search bar */}
       <div className="relative">
-        <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+        <Search className="absolute left-3 top-2.5 h-5 w-5 text-[var(--color-text-secondary)]" />
         <input
           type="text"
           placeholder="Search repositories..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="input-search"
         />
       </div>
-
+  
+      {/* Repository grid */}
       <div className="grid gap-4">
         {filteredRepos.map(repo => (
-          <div
-            key={repo.id}
-            className="bg-white rounded-lg border hover:shadow-md transition-shadow"
-          >
-            <div
-              className="p-4 cursor-pointer"
-              onClick={() => handleRepoClick(repo)}
-            >
+          <div key={repo.id} className="card">
+            {/* Repository header and preview */}
+            <div className="p-4 cursor-pointer" onClick={() => handleRepoClick(repo)}>
               <div className="flex items-start justify-between">
                 <div className="flex-1">
-                  <h3 className="font-medium text-lg flex items-center gap-2">
+                  {/* Repository title and icons */}
+                  <h3 className="font-medium text-lg flex items-center gap-2 text-[var(--color-text-primary)]">
                     {expandedRepo?.id === repo.id ? 
-                      <ChevronDown className="w-4 h-4" /> : 
-                      <ChevronRight className="w-4 h-4" />
+                      <ChevronDown className="w-4 h-4 text-[var(--color-accent)]" /> : 
+                      <ChevronRight className="w-4 h-4 text-[var(--color-accent)]" />
                     }
-                    <Folder className="w-4 h-4" />
+                    <Folder className="w-4 h-4 text-[var(--color-text-secondary)]" />
                     {repo.name}
                     {repo.readme_preview && (
-                      <FileText className="w-4 h-4 text-gray-400" />
+                      <FileText className="w-4 h-4 text-[var(--color-text-secondary)]" />
                     )}
                   </h3>
+  
+                  {/* Repository description */}
                   {repo.description && (
-                    <p className="mt-1 text-gray-600">{repo.description}</p>
+                    <p className="mt-1 text-[var(--color-text-secondary)]">
+                      {repo.description}
+                    </p>
                   )}
+  
+                  {/* README preview */}
                   {repo.readme_preview && expandedRepo?.id !== repo.id && (
-                    <div className="mt-2 text-sm text-gray-500 bg-gray-50 p-2 rounded">
+                    <div className="mt-2 text-sm p-2 rounded bg-[var(--color-bg-primary)] text-[var(--color-text-secondary)]">
                       {repo.readme_preview}
-                      <button className="text-blue-500 hover:text-blue-600 ml-2 font-medium">
+                      <button className="ml-2 font-medium text-[var(--color-accent)]">
                         Show More
                       </button>
                     </div>
                   )}
-                  <div className="mt-2 text-sm text-gray-500">
+  
+                  {/* Repository metadata */}
+                  <div className="mt-2 text-sm text-[var(--color-text-secondary)]">
                     {repo.language && <span className="mr-4">Language: {repo.language}</span>}
                     <span>Last updated: {new Date(repo.pushed_at).toLocaleDateString()}</span>
                   </div>
                 </div>
+  
+                {/* External repository link */}
                 <a
                   href={repo.html_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-blue-500 hover:text-blue-600"
+                  className="hover:underline text-[var(--color-accent)]"
                   onClick={(e) => e.stopPropagation()}
                 >
                   View Repo →
                 </a>
               </div>
             </div>
-
+  
+            {/* Expanded README content */}
             {expandedRepo?.id === repo.id && (
-              <div className="border-t px-4 py-3">
+              <div className="border-t border-[var(--color-border)] px-4 py-3">
                 {expandedRepo.loading ? (
-                  <div className="text-center py-4">Loading README...</div>
+                  <div className="text-center py-4 text-[var(--color-text-secondary)]">
+                    Loading README...
+                  </div>
                 ) : (
-                  <div className="prose max-w-none dark:prose-invert">
+                  <div className="markdown-container">
                     <MarkdownRenderer content={expandedRepo.readme || ''} />
                   </div>
                 )}

@@ -1,6 +1,6 @@
 // src/components/CachePurge.tsx
 import { useState } from 'react'
-import { Trash2, X, Check } from 'lucide-react'
+import { RotateCcw, X, Check } from 'lucide-react'
 
 export function CachePurge() {
   const [showConfirm, setShowConfirm] = useState(false)
@@ -16,12 +16,14 @@ export function CachePurge() {
         <button
           onClick={() => setShowConfirm(true)}
           className="flex items-center gap-2 px-3 py-2 text-sm font-medium 
-                     bg-red-600 hover:bg-red-700 text-white rounded-md 
+                     bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)]
+                     border border-[var(--color-border)] rounded-md 
+                     hover:text-[var(--color-accent)] 
                      transition-colors shadow-lg"
-          title="Clear local cache"
+          title="Refresh cached repository data"
         >
-          <Trash2 className="w-4 h-4" />
-          Purge Cache
+          <RotateCcw className="w-4 h-4" />
+          Refresh Data
         </button>
       ) : (
         <>
@@ -38,11 +40,12 @@ export function CachePurge() {
           <button
             onClick={purgeCache}
             className="flex items-center gap-2 px-3 py-2 text-sm font-medium 
-                       bg-red-600 hover:bg-red-700 text-white rounded-md 
+                       bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] 
+                       text-white rounded-md 
                        transition-colors shadow-lg"
           >
             <Check className="w-4 h-4" />
-            Confirm
+            Purge Cache
           </button>
         </>
       )}

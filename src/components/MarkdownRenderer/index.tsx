@@ -70,7 +70,6 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
             const mermaidContent = Array.isArray(children) 
               ? children.join('') 
               : String(children)
-            console.log('Attempting to render Mermaid diagram:', mermaidContent)
             return <MermaidRenderer content={mermaidContent.trim()} />
           }
 

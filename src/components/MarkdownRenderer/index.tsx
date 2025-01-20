@@ -151,17 +151,8 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
 
   const syntaxTheme = isDarkMode ? nightOwl : oneLight
 
-  // If you prefer a stricter type, you could define code props like:
-  // interface CodeProps {
-  //   node?: any;
-  //   inline?: boolean;
-  //   className?: string;
-  //   children?: React.ReactNode;
-  //   // etc...
-  // }
-  // Then do: code: (props: CodeProps) => { ... }
-
   const components: Components = {
+    // Couldn't get react-markdown and Prism to play nicely, so for now, JavaScript-ify
     code: (props: any) => {
       const { inline, className, children } = props
       const match = /language-(\w+)/.exec(className || '')

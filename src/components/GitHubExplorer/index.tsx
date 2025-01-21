@@ -4,19 +4,8 @@ import { Search, Folder, ChevronDown, ChevronRight, FileText } from 'lucide-reac
 import { MarkdownRenderer } from '../MarkdownRenderer'
 import { LanguageStats } from './LanguageStats'
 import { getCachedData, setCachedData } from '../../utils/cache'
-
-interface Repository {
-  id: number
-  name: string
-  description: string | null
-  html_url: string
-  language: string | null
-  languages_url: string
-  languages: Record<string, number> | null
-  pushed_at: string
-  default_branch: string
-  readme_preview: string | null
-}
+import { fetchJSON, fetchText } from '../../config/api'
+import type { Repository, CacheMetadata } from '../../types/github'
 
 interface ExpandedRepo {
   id: number
@@ -44,11 +33,17 @@ export function GitHubExplorer() {
   useEffect(() => {
     const fetchRepos = async () => {
       try {
-        // Try to get repos from cache first
+        // Try to get repos from local cache first
         const cachedRepos = getCachedData<Repository[]>('github-repos')
-        if (cachedRepos) {
+        const cachedMetadata = getCachedData<CacheMetadata>('github-metadata')
+        
+        // Check if we have fresh cached data
+        if (cachedRepos && cachedMetadata) {
           console.log('Loading cached repository data')
+          setRepos(cachedRepos)
+          setLoading(false)
           
+          // Load cached READMEs
           cachedRepos.forEach(repo => {
             const cachedReadme = getCachedData<string>(`readme-${repo.name}`)
             if (cachedReadme) {
@@ -56,88 +51,73 @@ export function GitHubExplorer() {
             }
           })
           
-          setRepos(cachedRepos)
-          setLoading(false)
+          // Check server metadata in background
+          try {
+            const serverMetadata = await fetchJSON<CacheMetadata>('/metadata')
+            // If server has newer data, update in background
+            if (new Date(serverMetadata.last_updated) > new Date(cachedMetadata.last_updated)) {
+              console.log('Updating cached data from server')
+              await fetchFromServer()
+            }
+          } catch (err) {
+            console.error('Failed to check server metadata:', err)
+          }
+          
           return
         }
 
-        console.log('Fetching repository data from GitHub...')
-        const response = await fetch('https://api.github.com/users/matthewabbott/repos?per_page=100')
-        if (!response.ok) throw new Error('Failed to fetch repositories')
-        
-        const data = await response.json()
-        const sortedRepos = [...data].sort((a, b) => 
-          new Date(b.pushed_at).getTime() - new Date(a.pushed_at).getTime()
-        )
+        // If no cache or expired, fetch from server
+        await fetchFromServer()
+      } catch (err) {
+        setError('Error loading repositories. Please try again later.')
+        setLoading(false)
+      }
+    }
 
-        // Fetch READMEs and language stats for each repo
+    const fetchFromServer = async () => {
+      console.log('Fetching repository data from server...')
+      
+      try {
+        const reposData = await fetchJSON<Repository[]>('/repos')
+        
+        // Fetch language stats and READMEs for each repo
         const reposWithDetails = await Promise.all(
-          sortedRepos.map(async (repo) => {
+          reposData.map(async (repo: Repository) => {
             const repoDetails: Partial<Repository> = { ...repo, languages: null }
 
-            // First check if we have cached language data
-            const cachedLanguages = getCachedData<Record<string, number>>(`languages-${repo.name}`)
-            if (cachedLanguages) {
-              console.log(`Using cached language data for ${repo.name}`)
-              repoDetails.languages = cachedLanguages
-            } else {
-              // Fetch language stats if not cached
-              try {
-                const languagesResponse = await fetch(repo.languages_url)
-                if (languagesResponse.ok) {
-                  const languageData = await languagesResponse.json()
-                  repoDetails.languages = languageData
-                  // Cache language data separately
-                  setCachedData(`languages-${repo.name}`, languageData)
-                }
-              } catch (err) {
-                console.log(`Failed to fetch languages for ${repo.name}`)
-              }
+            try {
+              // Fetch language stats
+              const languageData = await fetchJSON<Record<string, number>>(`/repos/${repo.name}/languages`)
+              repoDetails.languages = languageData
+              setCachedData(`languages-${repo.name}`, languageData)
+            } catch (err) {
+              console.log(`Failed to fetch languages for ${repo.name}`)
             }
 
-            // Check for cached README status first
-            const cachedReadmeStatus = getCachedData<{ exists: boolean; content?: string }>(`readme-status-${repo.name}`)
-            
-            if (cachedReadmeStatus !== null) {
-              console.log(`Using cached README status for ${repo.name}`)
-              if (cachedReadmeStatus.exists && cachedReadmeStatus.content) {
-                repoDetails.readme_preview = truncateMarkdown(cachedReadmeStatus.content)
-                // Also update the separate readme cache for expanded view
-                setCachedData(`readme-${repo.name}`, cachedReadmeStatus.content)
-              }
-            } else {
-              // Fetch README if status not cached
-              try {
-                const readmeResponse = await fetch(
-                  `https://api.github.com/repos/matthewabbott/${repo.name}/readme`,
-                  { headers: { 'Accept': 'application/vnd.github.raw' } }
-                )
-                
-                if (readmeResponse.ok) {
-                  const readme = await readmeResponse.text()
-                  // Cache both the status and the content
-                  setCachedData(`readme-status-${repo.name}`, { exists: true, content: readme })
-                  repoDetails.readme_preview = truncateMarkdown(readme)
-                } else if (readmeResponse.status === 404) {
-                  // Cache the fact that README doesn't exist
-                  console.log(`Caching 404 status for ${repo.name} README`)
-                  setCachedData(`readme-status-${repo.name}`, { exists: false })
-                }
-              } catch (err) {
-                console.log(`Error fetching README for ${repo.name}:`, err)
-                // Cache the error state too
-                setCachedData(`readme-status-${repo.name}`, { exists: false })
-              }
+            try {
+              // Fetch README
+              const readme = await fetchText(`/repos/${repo.name}/readme`)
+              repoDetails.readme_preview = truncateMarkdown(readme)
+              setCachedData(`readme-${repo.name}`, readme)
+              setReadmeCache(prev => ({ ...prev, [repo.name]: readme }))
+            } catch (err) {
+              console.log(`Failed to fetch README for ${repo.name}`)
             }
 
             return repoDetails as Repository
           })
         )
 
+        // Cache the repository data
         setCachedData('github-repos', reposWithDetails)
+        
+        // Cache metadata
+        const metadata = await fetchJSON<CacheMetadata>('/metadata')
+        setCachedData('github-metadata', metadata)
+
         setRepos(reposWithDetails)
       } catch (err) {
-        setError('Error loading repositories. Please try again later.')
+        throw new Error('Failed to fetch repository data')
       } finally {
         setLoading(false)
       }
@@ -149,64 +129,51 @@ export function GitHubExplorer() {
   const fetchReadme = async (repo: Repository) => {
     // Check memory cache first
     if (readmeCache[repo.name]) {
-      console.log(`Using cached README for ${repo.name}`);
       setExpandedRepo({ 
         id: repo.id, 
         readme: readmeCache[repo.name], 
         loading: false 
-      });
-      return;
+      })
+      return
     }
 
-    setExpandedRepo({ id: repo.id, readme: null, loading: true });
+    setExpandedRepo({ id: repo.id, readme: null, loading: true })
     
     // Check localStorage cache
-    const cachedReadme = getCachedData<string>(`readme-${repo.name}`);
+    const cachedReadme = getCachedData<string>(`readme-${repo.name}`)
     if (cachedReadme) {
-      console.log(`Loading README from cache for ${repo.name}`);
-      setReadmeCache(prev => ({ ...prev, [repo.name]: cachedReadme }));
+      setReadmeCache(prev => ({ ...prev, [repo.name]: cachedReadme }))
       setExpandedRepo({ 
         id: repo.id, 
         readme: cachedReadme, 
         loading: false 
-      });
-      return;
+      })
+      return
     }
 
-    // If not cached, fetch from GitHub
+    // If not cached, fetch from server
     try {
-      console.log(`Fetching full README for ${repo.name}`);
-      const response = await fetch(
-        `https://api.github.com/repos/matthewabbott/${repo.name}/readme`,
-        { headers: { 'Accept': 'application/vnd.github.raw' } }
-      );
-      
-      if (response.ok) {
-        const readme = await response.text();
-        // Cache the full README
-        setCachedData(`readme-${repo.name}`, readme);
-        setReadmeCache(prev => ({ ...prev, [repo.name]: readme }));
-        setExpandedRepo({ id: repo.id, readme, loading: false });
-      } else {
-        setExpandedRepo(null);
-      }
+      const readme = await fetchText(`/repos/${repo.name}/readme`)
+      setCachedData(`readme-${repo.name}`, readme)
+      setReadmeCache(prev => ({ ...prev, [repo.name]: readme }))
+      setExpandedRepo({ id: repo.id, readme, loading: false })
     } catch (err) {
-      setExpandedRepo(null);
+      setExpandedRepo(null)
     }
-  };
+  }
 
   const handleRepoClick = (repo: Repository) => {
     if (expandedRepo?.id === repo.id) {
-      setExpandedRepo(null);
+      setExpandedRepo(null)
     } else {
-      fetchReadme(repo);
+      fetchReadme(repo)
     }
-  };
+  }
 
   const filteredRepos = repos.filter(repo =>
     repo.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (repo.description && repo.description.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  )
 
   if (loading) return <div>Loading repositories...</div>
   if (error) return <div className="text-red-500">{error}</div>
@@ -224,7 +191,7 @@ export function GitHubExplorer() {
           className="input-search"
         />
       </div>
-  
+
       {/* Repository grid */}
       <div className="grid gap-4">
         {filteredRepos.map(repo => (

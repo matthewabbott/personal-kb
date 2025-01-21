@@ -9,46 +9,40 @@ import mermaid from 'mermaid'
 const MermaidRenderer = ({ content }: { content: string }) => {
   const elementRef = useRef<HTMLDivElement>(null)
   const [isDarkMode, setIsDarkMode] = useState(() =>
-    document.documentElement.getAttribute('data-theme') === 'dark'
+    document.documentElement.classList.contains('dark')
   )
 
   const renderDiagram = useCallback(async () => {
     if (!elementRef.current) return
 
     try {
-      // Get computed CSS variables from our theme
-      const style = getComputedStyle(document.documentElement)
-      const bgPrimary = style.getPropertyValue('--color-bg-primary').trim()
-      const bgSecondary = style.getPropertyValue('--color-bg-secondary').trim()
-      const textPrimary = style.getPropertyValue('--color-text-primary').trim()
-      const textSecondary = style.getPropertyValue('--color-text-secondary').trim()
-      const borderColor = style.getPropertyValue('--color-border').trim()
-
-      // Initialize mermaid with our theme colors
+      const isDark = document.documentElement.classList.contains('dark')
+      
+      // Initialize mermaid with theme colors
       mermaid.initialize({
         startOnLoad: false,
-        theme: isDarkMode ? 'dark' : 'default',
-        darkMode: isDarkMode,
+        theme: isDark ? 'dark' : 'default',
+        darkMode: isDark,
         themeVariables: {
-          primaryColor: bgSecondary,
-          primaryTextColor: textPrimary,
-          primaryBorderColor: borderColor,
-          secondaryColor: bgPrimary,
-          secondaryTextColor: textSecondary,
-          secondaryBorderColor: borderColor,
-          tertiaryColor: bgSecondary,
-          tertiaryTextColor: textPrimary,
-          tertiaryBorderColor: borderColor,
-          noteTextColor: textPrimary,
-          noteBkgColor: bgSecondary,
-          noteBorderColor: borderColor,
-          lineColor: textSecondary,
-          textColor: textPrimary,
-          mainBkg: bgPrimary,
-          nodeBorder: borderColor,
-          clusterBkg: bgSecondary,
-          titleColor: textPrimary,
-          edgeLabelBackground: bgSecondary
+          primaryColor: isDark ? '#252220' : '#ffffff',           // bg-secondary
+          primaryTextColor: isDark ? '#e6ddd6' : '#2c1810',      // text-primary
+          primaryBorderColor: isDark ? '#3d332d' : '#d4c5b9',    // border
+          secondaryColor: isDark ? '#1a1614' : '#f8f3e9',        // bg-primary
+          secondaryTextColor: isDark ? '#b5a396' : '#6b4d3c',    // text-secondary
+          secondaryBorderColor: isDark ? '#3d332d' : '#d4c5b9',  // border
+          tertiaryColor: isDark ? '#252220' : '#ffffff',         // bg-secondary
+          tertiaryTextColor: isDark ? '#e6ddd6' : '#2c1810',     // text-primary
+          tertiaryBorderColor: isDark ? '#3d332d' : '#d4c5b9',   // border
+          noteTextColor: isDark ? '#e6ddd6' : '#2c1810',         // text-primary
+          noteBkgColor: isDark ? '#252220' : '#ffffff',          // bg-secondary
+          noteBorderColor: isDark ? '#3d332d' : '#d4c5b9',       // border
+          lineColor: isDark ? '#b5a396' : '#6b4d3c',             // text-secondary
+          textColor: isDark ? '#e6ddd6' : '#2c1810',             // text-primary
+          mainBkg: isDark ? '#1a1614' : '#f8f3e9',              // bg-primary
+          nodeBorder: isDark ? '#3d332d' : '#d4c5b9',           // border
+          clusterBkg: isDark ? '#252220' : '#ffffff',           // bg-secondary
+          titleColor: isDark ? '#e6ddd6' : '#2c1810',           // text-primary
+          edgeLabelBackground: isDark ? '#252220' : '#ffffff'    // bg-secondary
         }
       })
 
@@ -85,16 +79,15 @@ const MermaidRenderer = ({ content }: { content: string }) => {
 
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
-        if (mutation.attributeName === 'data-theme' && isMounted) {
-          const newTheme = document.documentElement.getAttribute('data-theme')
-          setIsDarkMode(newTheme === 'dark')
+        if (mutation.attributeName === 'class' && isMounted) {
+          setIsDarkMode(document.documentElement.classList.contains('dark'))
         }
       })
     })
 
     observer.observe(document.documentElement, {
       attributes: true,
-      attributeFilter: ['data-theme']
+      attributeFilter: ['class']
     })
 
     return () => {
@@ -129,21 +122,21 @@ interface MarkdownRendererProps {
 
 export function MarkdownRenderer({ content }: MarkdownRendererProps) {
   const [isDarkMode, setIsDarkMode] = useState(() =>
-    document.documentElement.getAttribute('data-theme') === 'dark'
+    document.documentElement.classList.contains('dark')
   )
 
   useEffect(() => {
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
-        if (mutation.attributeName === 'data-theme') {
-          setIsDarkMode(document.documentElement.getAttribute('data-theme') === 'dark')
+        if (mutation.attributeName === 'class') {
+          setIsDarkMode(document.documentElement.classList.contains('dark'))
         }
       })
     })
 
     observer.observe(document.documentElement, {
       attributes: true,
-      attributeFilter: ['data-theme']
+      attributeFilter: ['class']
     })
 
     return () => observer.disconnect()
@@ -152,9 +145,8 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
   const syntaxTheme = isDarkMode ? nightOwl : oneLight
 
   const components: Components = {
-    // Couldn't get react-markdown and Prism to play nicely, so for now, JavaScript-ify
-    code: (props: any) => {
-      const { inline, className, children } = props
+    // Couldn't get react-markdown and Prism to play nicely with TypeScript, so for now, use any
+    code: ({ inline, className, children, ...props }: any) => {
       const match = /language-(\w+)/.exec(className || '')
       const language = match ? match[1] : ''
 
@@ -169,15 +161,16 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
       if (!inline) {
         return (
           <SyntaxHighlighter
-            style={syntaxTheme}
+            style={syntaxTheme as { [key: string]: React.CSSProperties }}
             language={language}
             PreTag="div"
             className="markdown-code"
             customStyle={{
-              backgroundColor: 'var(--color-bg-secondary)',
+              backgroundColor: isDarkMode ? '#252220' : '#ffffff', // bg-secondary
               margin: '1.5em 0',
               borderRadius: '0.375rem',
             }}
+            {...props}
           >
             {String(children).replace(/\n$/, '')}
           </SyntaxHighlighter>
@@ -186,7 +179,7 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
 
       // Otherwise, render inline code
       return (
-        <code className={`${className} bg-[var(--color-bg-secondary)] rounded px-1`}>
+        <code className={`${className} bg-skin-bg-secondary dark:bg-skin-bg-secondary-dark rounded px-1`} {...props}>
           {children}
         </code>
       )

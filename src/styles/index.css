@@ -3,130 +3,91 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Base theme variables */
 @layer base {
-    :root {
-      /* Light theme */
-      --color-bg-primary: #f8f3e9;
-      --color-bg-secondary: #fff;
-      --color-text-primary: #2c1810;
-      --color-text-secondary: #6b4d3c;
-      --color-border: #d4c5b9;
-      --color-accent: #843729;
-      --color-accent-hover: #6b2c21;
-      --color-error-bg: #f8e6e6;
-      --color-error-border: #843729;
-      --color-shadow: rgba(0, 0, 0, 0.1);
-    }
-  
-    :root[data-theme="dark"] {
-      --color-bg-primary: #1a1614;
-      --color-bg-secondary: #252220;
-      --color-text-primary: #e6ddd6;
-      --color-text-secondary: #b5a396;
-      --color-border: #3d332d;
-      --color-accent: #c25b4a;
-      --color-accent-hover: #d46d5c;
-      --color-error-bg: #3d2724;
-      --color-error-border: #c25b4a;
-      --color-shadow: rgba(0, 0, 0, 0.3);
-    }
+  :root {
+    --shadow-color: rgba(0, 0, 0, 0.1);
+  }
+
+  .dark {
+    --shadow-color: rgba(0, 0, 0, 0.3);
+  }
 
   body {
-    @apply bg-[var(--color-bg-primary)] text-[var(--color-text-primary)];
+    @apply bg-skin-bg-primary dark:bg-skin-bg-primary-dark 
+           text-skin-text-primary dark:text-skin-text-primary-dark;
     font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 }
 
-/* Components */
 @layer components {
-  /* darkmode toggle */
   .theme-toggle {
     @apply fixed top-4 right-4 
-            p-2 rounded-full
-            bg-[var(--color-bg-secondary)]
-            border border-[var(--color-border)]
-            text-[var(--color-text-secondary)]
-            hover:text-[var(--color-accent)]
-            transition-colors
-            cursor-pointer;
-    }
-  /* Layout components */
-  .logo {
-    @apply h-24 p-6;
-    will-change: filter;
-    transition: filter 300ms;
-  }
-  
-  .logo:hover {
-    filter: drop-shadow(0 0 2em #646cffaa);
-  }
-  
-  .logo.react:hover {
-    filter: drop-shadow(0 0 2em #61dafbaa);
+           p-2 rounded-full
+           bg-skin-bg-secondary dark:bg-skin-bg-secondary-dark
+           border border-skin-border dark:border-skin-border-dark
+           text-skin-text-secondary dark:text-skin-text-secondary-dark
+           hover:text-skin-accent dark:hover:text-skin-accent-dark
+           transition-colors
+           cursor-pointer;
   }
 
   .card {
-    @apply bg-[var(--color-bg-secondary)] 
-           border border-[var(--color-border)]
+    @apply bg-skin-bg-secondary dark:bg-skin-bg-secondary-dark 
+           border border-skin-border dark:border-skin-border-dark
            rounded-lg
            transition-shadow
-           hover:shadow-md;
+           hover:shadow-skin;
   }
 
   .input-search {
     @apply w-full
            pl-10 pr-4 py-2
            border rounded-lg
-           bg-[var(--color-bg-secondary)]
-           border-[var(--color-border)]
-           text-[var(--color-text-primary)]
+           bg-skin-bg-secondary dark:bg-skin-bg-secondary-dark
+           border-skin-border dark:border-skin-border-dark
+           text-skin-text-primary dark:text-skin-text-primary-dark
            focus:outline-none
            focus:ring-2
-           focus:ring-[var(--color-accent)]
+           focus:ring-skin-accent dark:focus:ring-skin-accent-dark
            focus:border-transparent;
   }
 
   /* Markdown components */
   .markdown-container {
     @apply prose max-w-none 
-           prose-headings:text-[var(--color-text-primary)]
-           prose-p:text-[var(--color-text-primary)]
-           prose-strong:text-[var(--color-text-primary)]
-           prose-ul:text-[var(--color-text-primary)]
-           prose-ol:text-[var(--color-text-primary)]
-           prose-li:text-[var(--color-text-primary)]
-           prose-blockquote:text-[var(--color-text-secondary)]
-           prose-blockquote:border-l-[var(--color-border)]
-           prose-a:text-[var(--color-accent)]
+           dark:prose-invert
+           prose-headings:text-skin-text-primary dark:prose-headings:text-skin-text-primary-dark
+           prose-p:text-skin-text-primary dark:prose-p:text-skin-text-primary-dark
+           prose-strong:text-skin-text-primary dark:prose-strong:text-skin-text-primary-dark
+           prose-ul:text-skin-text-primary dark:prose-ul:text-skin-text-primary-dark
+           prose-ol:text-skin-text-primary dark:prose-ol:text-skin-text-primary-dark
+           prose-li:text-skin-text-primary dark:prose-li:text-skin-text-primary-dark
+           prose-blockquote:text-skin-text-secondary dark:prose-blockquote:text-skin-text-secondary-dark
+           prose-blockquote:border-l-skin-border dark:prose-blockquote:border-l-skin-border-dark
+           prose-a:text-skin-accent dark:prose-a:text-skin-accent-dark
            prose-a:no-underline
-           hover:prose-a:text-[var(--color-accent-hover)]
-           prose-code:text-[var(--color-text-primary)]
-           prose-code:bg-[var(--color-bg-primary)]
-           prose-pre:bg-[var(--color-bg-primary)];
+           hover:prose-a:text-skin-accent-hover dark:hover:prose-a:text-skin-accent-dark-hover
+           prose-code:text-skin-text-primary dark:prose-code:text-skin-text-primary-dark
+           prose-code:bg-skin-bg-primary dark:prose-code:bg-skin-bg-primary-dark
+           prose-pre:bg-skin-bg-primary dark:prose-pre:bg-skin-bg-primary-dark;
   }
 
   .markdown-heading-1 {
-    @apply text-2xl font-bold mt-6 mb-4 text-[var(--color-text-primary)];
+    @apply text-2xl font-bold mt-6 mb-4 
+           text-skin-text-primary dark:text-skin-text-primary-dark;
   }
 
   .markdown-heading-2 {
-    @apply text-xl font-bold mt-5 mb-3 text-[var(--color-text-primary)];
-  }
-
-  .markdown-code {
-    @apply rounded-md;
-  }
-
-  .markdown-diagram {
-    @apply my-4 flex justify-center;
+    @apply text-xl font-bold mt-5 mb-3 
+           text-skin-text-primary dark:text-skin-text-primary-dark;
   }
 
   /* Language stats components */
   .language-bar {
-    @apply h-2 flex gap-0.5 rounded-full overflow-hidden w-64 bg-[var(--color-bg-primary)];
+    @apply h-2 flex gap-0.5 rounded-full overflow-hidden w-64 
+           bg-skin-bg-primary dark:bg-skin-bg-primary-dark;
   }
 
   .language-segment {
@@ -146,7 +107,7 @@
   }
 
   .language-percentage {
-    @apply text-[var(--color-text-secondary)];
+    @apply text-skin-text-secondary dark:text-skin-text-secondary-dark;
   }
 }
 

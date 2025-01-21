@@ -8,8 +8,8 @@ export function ThemeToggle() {
   )
 
   useEffect(() => {
-    // Update data-theme attribute on root element
-    document.documentElement.setAttribute('data-theme', theme)
+    // Update dark mode class on html element
+    document.documentElement.classList.toggle('dark', theme === 'dark')
     // Store theme preference
     localStorage.setItem('theme', theme)
   }, [theme])

@@ -215,7 +215,7 @@ export function GitHubExplorer() {
     <div className="space-y-4">
       {/* Search bar */}
       <div className="relative">
-        <Search className="absolute left-3 top-2.5 h-5 w-5 text-[var(--color-text-secondary)]" />
+        <Search className="absolute left-3 top-2.5 h-5 w-5 text-skin-text-secondary dark:text-skin-text-secondary-dark" />
         <input
           type="text"
           placeholder="Search repositories..."
@@ -232,45 +232,42 @@ export function GitHubExplorer() {
             <div className="p-4 cursor-pointer" onClick={() => handleRepoClick(repo)}>
               <div className="flex items-start justify-between">
                 <div className="flex-1">
-                  <h3 className="font-medium text-lg flex items-center gap-2 text-[var(--color-text-primary)]">
+                  <h3 className="font-medium text-lg flex items-center gap-2 text-skin-text-primary dark:text-skin-text-primary-dark">
                     {expandedRepo?.id === repo.id ? 
-                      <ChevronDown className="w-4 h-4 text-[var(--color-accent)]" /> : 
-                      <ChevronRight className="w-4 h-4 text-[var(--color-accent)]" />
+                      <ChevronDown className="w-4 h-4 text-skin-accent dark:text-skin-accent-dark" /> : 
+                      <ChevronRight className="w-4 h-4 text-skin-accent dark:text-skin-accent-dark" />
                     }
-                    <Folder className="w-4 h-4 text-[var(--color-text-secondary)]" />
+                    <Folder className="w-4 h-4 text-skin-text-secondary dark:text-skin-text-secondary-dark" />
                     {repo.name}
                     {repo.readme_preview && (
-                      <FileText className="w-4 h-4 text-[var(--color-text-secondary)]" />
+                      <FileText className="w-4 h-4 text-skin-text-secondary dark:text-skin-text-secondary-dark" />
                     )}
                   </h3>
   
                   {repo.description && (
-                    <p className="mt-1 text-[var(--color-text-secondary)]">
+                    <p className="mt-1 text-skin-text-secondary dark:text-skin-text-secondary-dark">
                       {repo.description}
                     </p>
                   )}
   
-                  {expandedRepo?.id !== repo.id && (
-                    <div className="mt-2 text-sm p-2 rounded bg-[var(--color-bg-primary)] text-[var(--color-text-secondary)]">
-                      {repo.readme_preview ? (
-                        <>
-                          {repo.readme_preview}
-                          <button className="ml-2 font-medium text-[var(--color-accent)]">
-                            Show More
-                          </button>
-                        </>
-                      ) : (
-                        <span className="italic">No README available</span>
-                      )}
-                    </div>
-                  )}
+                  <div className="mt-2 text-sm p-2 rounded bg-skin-bg-primary dark:bg-skin-bg-primary-dark text-skin-text-secondary dark:text-skin-text-secondary-dark">
+                    {repo.readme_preview ? (
+                      <>
+                        {repo.readme_preview}
+                        <button className="ml-2 font-medium text-skin-accent dark:text-skin-accent-dark hover:text-skin-accent-hover dark:hover:text-skin-accent-dark-hover">
+                          Show More
+                        </button>
+                      </>
+                    ) : (
+                      <span className="italic">No README available</span>
+                    )}
+                  </div>
   
-                  <div className="mt-2 text-sm text-[var(--color-text-secondary)]">
+                  <div className="mt-2 text-sm text-skin-text-secondary dark:text-skin-text-secondary-dark">
                     {repo.language && <span className="mr-4">Language: {repo.language}</span>}
                     <span>Last updated: {new Date(repo.pushed_at).toLocaleDateString()}</span>
                   </div>
 
-                  {/* Add Language Stats component */}
                   {repo.languages && Object.keys(repo.languages).length > 0 && (
                     <LanguageStats languages={repo.languages} />
                   )}
@@ -280,7 +277,7 @@ export function GitHubExplorer() {
                   href={repo.html_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="hover:underline text-[var(--color-accent)]"
+                  className="hover:underline text-skin-accent dark:text-skin-accent-dark hover:text-skin-accent-hover dark:hover:text-skin-accent-dark-hover"
                   onClick={(e) => e.stopPropagation()}
                 >
                   View Repo →
@@ -289,9 +286,9 @@ export function GitHubExplorer() {
             </div>
   
             {expandedRepo?.id === repo.id && (
-              <div className="border-t border-[var(--color-border)] px-4 py-3">
+              <div className="border-t border-skin-border dark:border-skin-border-dark px-4 py-3">
                 {expandedRepo.loading ? (
-                  <div className="text-center py-4 text-[var(--color-text-secondary)]">
+                  <div className="text-center py-4 text-skin-text-secondary dark:text-skin-text-secondary-dark">
                     Loading README...
                   </div>
                 ) : expandedRepo.readme ? (
@@ -300,10 +297,10 @@ export function GitHubExplorer() {
                   </div>
                 ) : (
                   <div className="text-center py-8">
-                    <div className="text-[var(--color-text-secondary)] text-lg mb-2">
+                    <div className="text-skin-text-secondary dark:text-skin-text-secondary-dark text-lg mb-2">
                       No README Available
                     </div>
-                    <p className="text-sm text-[var(--color-text-secondary)]">
+                    <p className="text-sm text-skin-text-secondary dark:text-skin-text-secondary-dark">
                       This repository doesn't have a README file.
                     </p>
                   </div>

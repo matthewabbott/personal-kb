@@ -95,20 +95,39 @@ export function GitHubExplorer() {
               }
             }
 
-            // Fetch README
-            try {
-              const readmeResponse = await fetch(
-                `https://api.github.com/repos/matthewabbott/${repo.name}/readme`,
-                { headers: { 'Accept': 'application/vnd.github.raw' } }
-              )
-              
-              if (readmeResponse.ok) {
-                const readme = await readmeResponse.text()
-                setCachedData(`readme-${repo.name}`, readme)
-                repoDetails.readme_preview = truncateMarkdown(readme)
+            // Check for cached README status first
+            const cachedReadmeStatus = getCachedData<{ exists: boolean; content?: string }>(`readme-status-${repo.name}`)
+            
+            if (cachedReadmeStatus !== null) {
+              console.log(`Using cached README status for ${repo.name}`)
+              if (cachedReadmeStatus.exists && cachedReadmeStatus.content) {
+                repoDetails.readme_preview = truncateMarkdown(cachedReadmeStatus.content)
+                // Also update the separate readme cache for expanded view
+                setCachedData(`readme-${repo.name}`, cachedReadmeStatus.content)
               }
-            } catch (err) {
-              console.log(`No README found for ${repo.name}`)
+            } else {
+              // Fetch README if status not cached
+              try {
+                const readmeResponse = await fetch(
+                  `https://api.github.com/repos/matthewabbott/${repo.name}/readme`,
+                  { headers: { 'Accept': 'application/vnd.github.raw' } }
+                )
+                
+                if (readmeResponse.ok) {
+                  const readme = await readmeResponse.text()
+                  // Cache both the status and the content
+                  setCachedData(`readme-status-${repo.name}`, { exists: true, content: readme })
+                  repoDetails.readme_preview = truncateMarkdown(readme)
+                } else if (readmeResponse.status === 404) {
+                  // Cache the fact that README doesn't exist
+                  console.log(`Caching 404 status for ${repo.name} README`)
+                  setCachedData(`readme-status-${repo.name}`, { exists: false })
+                }
+              } catch (err) {
+                console.log(`Error fetching README for ${repo.name}:`, err)
+                // Cache the error state too
+                setCachedData(`readme-status-${repo.name}`, { exists: false })
+              }
             }
 
             return repoDetails as Repository

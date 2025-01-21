@@ -250,12 +250,18 @@ export function GitHubExplorer() {
                     </p>
                   )}
   
-                  {repo.readme_preview && expandedRepo?.id !== repo.id && (
+                  {expandedRepo?.id !== repo.id && (
                     <div className="mt-2 text-sm p-2 rounded bg-[var(--color-bg-primary)] text-[var(--color-text-secondary)]">
-                      {repo.readme_preview}
-                      <button className="ml-2 font-medium text-[var(--color-accent)]">
-                        Show More
-                      </button>
+                      {repo.readme_preview ? (
+                        <>
+                          {repo.readme_preview}
+                          <button className="ml-2 font-medium text-[var(--color-accent)]">
+                            Show More
+                          </button>
+                        </>
+                      ) : (
+                        <span className="italic">No README available</span>
+                      )}
                     </div>
                   )}
   
@@ -288,9 +294,18 @@ export function GitHubExplorer() {
                   <div className="text-center py-4 text-[var(--color-text-secondary)]">
                     Loading README...
                   </div>
-                ) : (
+                ) : expandedRepo.readme ? (
                   <div className="markdown-container">
-                    <MarkdownRenderer content={expandedRepo.readme || ''} />
+                    <MarkdownRenderer content={expandedRepo.readme} />
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <div className="text-[var(--color-text-secondary)] text-lg mb-2">
+                      No README Available
+                    </div>
+                    <p className="text-sm text-[var(--color-text-secondary)]">
+                      This repository doesn't have a README file.
+                    </p>
                   </div>
                 )}
               </div>

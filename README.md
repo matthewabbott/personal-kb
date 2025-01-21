@@ -66,8 +66,9 @@ personal-kb/
 │   ├── App.tsx                       # Root application component
 │   └── main.tsx                      # Application entry point
 ├── server/                           # Backend source
+│   ├── data/                         # Development cache directory
 │   ├── src/
-│   │   ├── types.ts                  # Shared type definitions
+│   │   ├── types.ts                 # Shared type definitions
 │   │   ├── githubCache.ts           # GitHub data caching logic
 │   │   └── index.ts                 # Express server setup
 │   └── tsconfig.json                # TypeScript configuration
@@ -103,6 +104,9 @@ npm run dev
 # Terminal 2: Start backend
 cd server
 npm run dev
+
+# Or instead run both frontend and backend with one command
+npm run dev:all
 ```
 
 ## Production Deployment

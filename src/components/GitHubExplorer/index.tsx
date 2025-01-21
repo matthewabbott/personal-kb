@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { Search, Folder, ChevronDown, ChevronRight, FileText } from 'lucide-react'
 import { MarkdownRenderer } from '../MarkdownRenderer'
+import { LanguageStats } from './LanguageStats'
 import { getCachedData, setCachedData } from '../../utils/cache'
 
 interface Repository {
@@ -10,9 +11,11 @@ interface Repository {
   description: string | null
   html_url: string
   language: string | null
+  languages_url: string
+  languages: Record<string, number> | null
   pushed_at: string
   default_branch: string
-  readme_preview: string | null  // Store preview directly with repo
+  readme_preview: string | null
 }
 
 interface ExpandedRepo {
@@ -23,15 +26,11 @@ interface ExpandedRepo {
 
 const truncateMarkdown = (markdown: string, maxLength: number = 150) => {
   const lines = markdown.split('\n')
-  let truncated = lines[0]  // Get first line
-  
-  // Remove markdown headers
+  let truncated = lines[0]
   truncated = truncated.replace(/^#+\s/, '')
-  
-  if (truncated.length > maxLength) {
-    return truncated.slice(0, maxLength) + '...'
-  }
-  return truncated + (lines.length > 1 ? '...' : '')
+  return truncated.length > maxLength 
+    ? truncated.slice(0, maxLength) + '...'
+    : truncated + (lines.length > 1 ? '...' : '')
 }
 
 export function GitHubExplorer() {
@@ -46,64 +45,78 @@ export function GitHubExplorer() {
     const fetchRepos = async () => {
       try {
         // Try to get repos from cache first
-        const cachedRepos = getCachedData<Repository[]>('github-repos');
+        const cachedRepos = getCachedData<Repository[]>('github-repos')
         if (cachedRepos) {
-          console.log('Loading cached repository data');
+          console.log('Loading cached repository data')
           
-          // Load any cached full READMEs into memory
           cachedRepos.forEach(repo => {
-            const cachedReadme = getCachedData<string>(`readme-${repo.name}`);
+            const cachedReadme = getCachedData<string>(`readme-${repo.name}`)
             if (cachedReadme) {
-              console.log(`Loading cached full README for ${repo.name}`);
-              setReadmeCache(prev => ({ ...prev, [repo.name]: cachedReadme }));
+              setReadmeCache(prev => ({ ...prev, [repo.name]: cachedReadme }))
             }
-          });
+          })
           
-          setRepos(cachedRepos);
-          setLoading(false);
-          return;
+          setRepos(cachedRepos)
+          setLoading(false)
+          return
         }
 
-        console.log('Fetching repository data from GitHub...');
+        console.log('Fetching repository data from GitHub...')
         const response = await fetch('https://api.github.com/users/matthewabbott/repos?per_page=100')
         if (!response.ok) throw new Error('Failed to fetch repositories')
         
         const data = await response.json()
-        const sortedRepos = [...data].sort((a, b) => {
-          return new Date(b.pushed_at).getTime() - new Date(a.pushed_at).getTime()
-        })
+        const sortedRepos = [...data].sort((a, b) => 
+          new Date(b.pushed_at).getTime() - new Date(a.pushed_at).getTime()
+        )
 
-        // Fetch and add README previews
-        const reposWithPreviews = await Promise.all(
+        // Fetch READMEs and language stats for each repo
+        const reposWithDetails = await Promise.all(
           sortedRepos.map(async (repo) => {
+            const repoDetails: Partial<Repository> = { ...repo, languages: null }
+
+            // First check if we have cached language data
+            const cachedLanguages = getCachedData<Record<string, number>>(`languages-${repo.name}`)
+            if (cachedLanguages) {
+              console.log(`Using cached language data for ${repo.name}`)
+              repoDetails.languages = cachedLanguages
+            } else {
+              // Fetch language stats if not cached
+              try {
+                const languagesResponse = await fetch(repo.languages_url)
+                if (languagesResponse.ok) {
+                  const languageData = await languagesResponse.json()
+                  repoDetails.languages = languageData
+                  // Cache language data separately
+                  setCachedData(`languages-${repo.name}`, languageData)
+                }
+              } catch (err) {
+                console.log(`Failed to fetch languages for ${repo.name}`)
+              }
+            }
+
+            // Fetch README
             try {
               const readmeResponse = await fetch(
                 `https://api.github.com/repos/matthewabbott/${repo.name}/readme`,
                 { headers: { 'Accept': 'application/vnd.github.raw' } }
-              );
+              )
               
               if (readmeResponse.ok) {
-                const readme = await readmeResponse.text();
-                console.log(`Fetched README for ${repo.name}`);
-                // Cache full README for later use
-                setCachedData(`readme-${repo.name}`, readme);
-                return {
-                  ...repo,
-                  readme_preview: truncateMarkdown(readme)
-                };
+                const readme = await readmeResponse.text()
+                setCachedData(`readme-${repo.name}`, readme)
+                repoDetails.readme_preview = truncateMarkdown(readme)
               }
-              
-              return { ...repo, readme_preview: null };
             } catch (err) {
-              console.log(`No README found for ${repo.name}`);
-              return { ...repo, readme_preview: null };
+              console.log(`No README found for ${repo.name}`)
             }
-          })
-        );
 
-        // Cache the repos with their previews
-        setCachedData('github-repos', reposWithPreviews);
-        setRepos(reposWithPreviews);
+            return repoDetails as Repository
+          })
+        )
+
+        setCachedData('github-repos', reposWithDetails)
+        setRepos(reposWithDetails)
       } catch (err) {
         setError('Error loading repositories. Please try again later.')
       } finally {
@@ -197,11 +210,9 @@ export function GitHubExplorer() {
       <div className="grid gap-4">
         {filteredRepos.map(repo => (
           <div key={repo.id} className="card">
-            {/* Repository header and preview */}
             <div className="p-4 cursor-pointer" onClick={() => handleRepoClick(repo)}>
               <div className="flex items-start justify-between">
                 <div className="flex-1">
-                  {/* Repository title and icons */}
                   <h3 className="font-medium text-lg flex items-center gap-2 text-[var(--color-text-primary)]">
                     {expandedRepo?.id === repo.id ? 
                       <ChevronDown className="w-4 h-4 text-[var(--color-accent)]" /> : 
@@ -214,14 +225,12 @@ export function GitHubExplorer() {
                     )}
                   </h3>
   
-                  {/* Repository description */}
                   {repo.description && (
                     <p className="mt-1 text-[var(--color-text-secondary)]">
                       {repo.description}
                     </p>
                   )}
   
-                  {/* README preview */}
                   {repo.readme_preview && expandedRepo?.id !== repo.id && (
                     <div className="mt-2 text-sm p-2 rounded bg-[var(--color-bg-primary)] text-[var(--color-text-secondary)]">
                       {repo.readme_preview}
@@ -231,14 +240,17 @@ export function GitHubExplorer() {
                     </div>
                   )}
   
-                  {/* Repository metadata */}
                   <div className="mt-2 text-sm text-[var(--color-text-secondary)]">
                     {repo.language && <span className="mr-4">Language: {repo.language}</span>}
                     <span>Last updated: {new Date(repo.pushed_at).toLocaleDateString()}</span>
                   </div>
+
+                  {/* Add Language Stats component */}
+                  {repo.languages && Object.keys(repo.languages).length > 0 && (
+                    <LanguageStats languages={repo.languages} />
+                  )}
                 </div>
   
-                {/* External repository link */}
                 <a
                   href={repo.html_url}
                   target="_blank"
@@ -251,7 +263,6 @@ export function GitHubExplorer() {
               </div>
             </div>
   
-            {/* Expanded README content */}
             {expandedRepo?.id === repo.id && (
               <div className="border-t border-[var(--color-border)] px-4 py-3">
                 {expandedRepo.loading ? (

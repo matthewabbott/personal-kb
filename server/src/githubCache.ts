@@ -4,36 +4,92 @@ import path from 'path';
 import { Repository, CacheMetadata } from './types';
 import fetch from 'node-fetch';
 
-const CACHE_DIR = process.env.CACHE_DIR || '/var/www/html/personal-kb/api/data';
-const GITHUB_USER = process.env.GITHUB_USER || 'matthewabbott';
-const GITHUB_TOKEN = process.env.GITHUB_TOKEN; // Optional: for higher rate limits
+const isDev = process.env.NODE_ENV !== 'production';
+const CACHE_DIR = isDev 
+  ? path.join(process.cwd(), 'data')  // Development: store in server/data
+  : '/var/www/html/personal-kb/api/data';  // Production: store in web directory
 
 export class GitHubCache {
+  constructor() {
+    console.log(`Running in ${isDev ? 'development' : 'production'} mode`);
+    console.log(`Using cache directory: ${CACHE_DIR}`);
+  }
+
   private async ensureCacheDir() {
     await fs.mkdir(path.join(CACHE_DIR, 'readmes'), { recursive: true });
     await fs.mkdir(path.join(CACHE_DIR, 'languages'), { recursive: true });
+    console.log(`Ensured cache directories exist in ${CACHE_DIR}`);
   }
 
-  private async fetchGitHub(endpoint: string, raw = false) {
-    const headers: Record<string, string> = {
-      'Accept': raw ? 'application/vnd.github.raw' : 'application/vnd.github.v3+json',
-    };
-
-    if (GITHUB_TOKEN) {
-      headers['Authorization'] = `token ${GITHUB_TOKEN}`;
+  private async getFileStats(filePath: string) {
+    try {
+      const stats = await fs.stat(filePath);
+      return {
+        exists: true,
+        lastModified: stats.mtime
+      };
+    } catch {
+      return {
+        exists: false,
+        lastModified: null
+      };
     }
+  }
 
-    const response = await fetch(`https://api.github.com/${endpoint}`, { headers });
+  async getRepos(): Promise<Repository[]> {
+    const filePath = path.join(this.cacheDir, 'repos.json');
+    const stats = await this.getFileStats(filePath);
     
-    if (!response.ok) {
-      throw new Error(`GitHub API error: ${response.statusText}`);
+    console.log(`Reading repos from ${filePath}`);
+    if (stats.exists) {
+      console.log(`Last modified: ${stats.lastModified?.toISOString()}`);
     }
+    
+    const data = await fs.readFile(filePath, 'utf-8');
+    return JSON.parse(data);
+  }
 
-    return raw ? response.text() : response.json();
+  async getLanguages(repoName: string): Promise<Record<string, number>> {
+    const filePath = path.join(this.cacheDir, 'languages', `${repoName}.json`);
+    const stats = await this.getFileStats(filePath);
+    
+    console.log(`Reading languages from ${filePath}`);
+    if (stats.exists) {
+      console.log(`Last modified: ${stats.lastModified?.toISOString()}`);
+    }
+    
+    const data = await fs.readFile(filePath, 'utf-8');
+    return JSON.parse(data);
+  }
+
+  async getReadme(repoName: string): Promise<string> {
+    const filePath = path.join(this.cacheDir, 'readmes', `${repoName}.md`);
+    const stats = await this.getFileStats(filePath);
+    
+    console.log(`Reading README from ${filePath}`);
+    if (stats.exists) {
+      console.log(`Last modified: ${stats.lastModified?.toISOString()}`);
+    }
+    
+    return fs.readFile(filePath, 'utf-8');
+  }
+
+  async getMetadata(): Promise<CacheMetadata> {
+    const filePath = path.join(this.cacheDir, 'metadata.json');
+    const stats = await this.getFileStats(filePath);
+    
+    console.log(`Reading metadata from ${filePath}`);
+    if (stats.exists) {
+      console.log(`Last modified: ${stats.lastModified?.toISOString()}`);
+    }
+    
+    const data = await fs.readFile(filePath, 'utf-8');
+    return JSON.parse(data);
   }
 
   async updateCache() {
     console.log('Starting cache update...');
+    console.log(`Cache directory: ${this.cacheDir}`);
     await this.ensureCacheDir();
 
     try {
@@ -42,10 +98,9 @@ export class GitHubCache {
       repos.sort((a, b) => new Date(b.pushed_at).getTime() - new Date(a.pushed_at).getTime());
 
       // Save base repository data
-      await fs.writeFile(
-        path.join(CACHE_DIR, 'repos.json'),
-        JSON.stringify(repos, null, 2)
-      );
+      const reposPath = path.join(this.cacheDir, 'repos.json');
+      await fs.writeFile(reposPath, JSON.stringify(repos, null, 2));
+      console.log(`Updated repos.json at ${reposPath}`);
 
       // Update individual repository data
       for (const repo of repos) {
@@ -93,33 +148,8 @@ export class GitHubCache {
 
       console.log('Cache update completed');
     } catch (error) {
-      console.error('Cache update failed:', error);
-      throw error;
+        console.error('Cache update failed:', error);
+        throw error;
     }
-  }
-
-  async getRepos(): Promise<Repository[]> {
-    const data = await fs.readFile(path.join(CACHE_DIR, 'repos.json'), 'utf-8');
-    return JSON.parse(data);
-  }
-
-  async getLanguages(repoName: string): Promise<Record<string, number>> {
-    const data = await fs.readFile(
-      path.join(CACHE_DIR, 'languages', `${repoName}.json`),
-      'utf-8'
-    );
-    return JSON.parse(data);
-  }
-
-  async getReadme(repoName: string): Promise<string> {
-    return fs.readFile(
-      path.join(CACHE_DIR, 'readmes', `${repoName}.md`),
-      'utf-8'
-    );
-  }
-
-  async getMetadata(): Promise<CacheMetadata> {
-    const data = await fs.readFile(path.join(CACHE_DIR, 'metadata.json'), 'utf-8');
-    return JSON.parse(data);
   }
 }

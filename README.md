@@ -11,15 +11,16 @@ flowchart TD
     end
 
     subgraph "VPS"
-        API[TypeScript API] --> |Hourly Fetch| GH
+        API[Express Server] --> |Cache Update| GH
         API --> |Store| FS[File Cache]
         FS --> |Serve| API
+        CRON[Cron Job] --> |Hourly| API
     end
 
     subgraph "Browser"
-        FE[React Frontend] --> |Fetch| API
-        FE --> |Store| LC[LocalStorage Cache]
-        LC --> |Read| FE
+        FE[React Frontend] --> |API Calls| API
+        FE --> MD[Markdown Renderer]
+        FE --> LS[Language Stats]
     end
 
     subgraph "Components"
@@ -50,8 +51,8 @@ flowchart TD
 
 ```
 personal-kb/
-├── src/                               # Frontend source
-│   ├── components/                    # React components
+├── src/                              # Frontend source
+│   ├── components/                   # React components
 │   │   ├── GitHubExplorer/           # Main repository explorer
 │   │   │   ├── index.tsx             # Repository listing and search
 │   │   │   └── LanguageStats.tsx     # Language distribution visualization
@@ -65,16 +66,16 @@ personal-kb/
 │   │   └── cache.ts                  # LocalStorage caching implementation
 │   ├── App.tsx                       # Root application component
 │   └── main.tsx                      # Application entry point
-├── server/                           # Backend source
-│   ├── data/                         # Development cache directory
+├── server/
 │   ├── src/
-│   │   ├── types.ts                 # Shared type definitions
-│   │   ├── githubCache.ts           # GitHub data caching logic
-│   │   └── index.ts                 # Express server setup
-│   └── tsconfig.json                # TypeScript configuration
+│   │   ├── index.ts                  # Express server setup
+│   │   ├── githubCache.ts            # GitHub repository cache system
+│   │   └── types.ts                  # TypeScript type definitions
+│   ├── data/                         # Cache directory for GitHub data
+│   └── .env                          # Environment configuration
 ├── index.html                        # HTML entry point
-├── tailwind.config.js               # Tailwind CSS configuration
-└── package.json                     # Project dependencies and scripts
+├── tailwind.config.js                # Tailwind CSS configuration
+└── package.json                      # Project dependencies and scripts
 ```
 
 ## Development
@@ -112,77 +113,100 @@ npm run dev:all
 ## Production Deployment
 
 The application is deployed at [mbabbott.com/personal-kb](https://mbabbott.com/personal-kb)
-
+ayyyy
 ### Deployment Steps
 
-1. Set up the directory structure:
+1. Environment Setup:
 ```bash
-# Create necessary directories
-mkdir -p /var/www/html/personal-kb/{app,api/data}
+# On the deployment server, modify the .env file in the server directory
+echo "GITHUB_USER=your-github-username" > server/.env
 ```
 
-2. Deploy the frontend:
+2. Build and Deploy:
 ```bash
-# Clone and build
-cd /root
+# Clone the repository
 git clone https://github.com/matthewabbott/personal-kb.git
 cd personal-kb
 
-# Build frontend
+# Install dependencies and build frontend
 npm install
 npm run build
 
-# Copy frontend files
-cp -r dist/* /var/www/html/personal-kb/app/
-```
-
-3. Deploy the backend:
-```bash
-# Build and deploy API
+# Build server
 cd server
 npm install
 npm run build
-cp -r dist package.json /var/www/html/personal-kb/api/
 
-# Install production dependencies
-cd /var/www/html/personal-kb/api
+# Create production directories
+sudo mkdir -p /var/www/html/personal-kb/{data,dist}
+
+# Copy frontend files
+sudo cp -r ../dist/* /var/www/html/personal-kb/
+
+# Copy server files
+sudo cp -r dist package.json /var/www/html/personal-kb/server/
+cd /var/www/html/personal-kb/server
 npm install --production
+```
 
-# Set up PM2 for process management
-npm install -g pm2
-pm2 start dist/index.js --name personal-kb-api
+3. Set up PM2:
+```bash
+# Install PM2 globally if not already installed
+sudo npm install -g pm2
+
+# Create PM2 ecosystem file
+cat > ecosystem.config.js << EOL
+module.exports = {
+  apps: [{
+    name: 'personal-kb-server',
+    script: 'dist/index.js',
+    env_production: {
+      NODE_ENV: 'production',
+      GITHUB_USER: 'your-github-username',
+      PORT: 3001
+    }
+  }]
+}
+EOL
+
+# Start the server with PM2
+pm2 start ecosystem.config.js --env production
+pm2 save
+pm2 startup
 ```
 
 4. Configure nginx:
 ```nginx
-# Add to your nginx configuration
+# personal-kb application
 location /personal-kb {
-    alias /var/www/html/personal-kb/app;
+    alias /var/www/html/personal-kb;
     try_files $uri $uri/ /personal-kb/index.html;
     
+    # Handle JavaScript files
     location ~* \.js$ {
         add_header Content-Type application/javascript;
     }
     
+    # Handle CSS files
     location ~* \.css$ {
         add_header Content-Type text/css;
     }
 }
 
-location /personal-kb-api/ {
-    proxy_pass http://localhost:3001/;
+# personal-kb API endpoints
+location /personal-kb/api/ {
+    proxy_pass http://localhost:3001/api/;
     proxy_http_version 1.1;
     proxy_set_header Upgrade $http_upgrade;
     proxy_set_header Connection 'upgrade';
     proxy_set_header Host $host;
     proxy_cache_bypass $http_upgrade;
 }
-```
 
-5. Update API configuration:
-```typescript
-// src/config/api.ts
-export const API_BASE_URL = process.env.NODE_ENV === 'production'
-  ? '/personal-kb-api'  // Will be proxied through nginx
-  : 'http://localhost:3001/api';
+# Cache directory access
+location /personal-kb/data/ {
+    alias /var/www/html/personal-kb/data/;
+    add_header Cache-Control "no-cache";
+    add_header Access-Control-Allow-Origin "*";
+}
 ```

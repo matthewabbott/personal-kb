@@ -1,4 +1,21 @@
 // server/src/index.ts
+import dotenv from 'dotenv';
+import path from 'path';
+
+// Load environment variables first, before any other imports
+console.log('Current working directory:', process.cwd());
+console.log('Loading .env from:', path.resolve(process.cwd(), '.env'));
+//const result = dotenv.config({ path: path.resolve(__dirname, '../.env') });
+const result = dotenv.config();
+if (result.error) {
+    console.error('Error loading .env file:', result.error);
+}
+console.log('Environment variables after dotenv:', {
+    NODE_ENV: process.env.NODE_ENV,
+    GITHUB_USER: process.env.GITHUB_USER
+});
+
+// Rest of your imports
 import express from 'express';
 import cors from 'cors';
 import { GitHubCache } from './githubCache';

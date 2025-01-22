@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "dev:server": "cd server && npm run dev",
-    "dev:all": "concurrently \"npm run dev\" \"npm run dev:server\"",
+    "dev:all": "concurrently \"npm run dev\" \"cd server && cross-env NODE_ENV=development npm run dev\"",
     "build": "tsc -b && vite build && cd server && npm run build",
     "build:server": "cd server && npm run build",
     "lint": "eslint .",
@@ -17,7 +17,6 @@
     "@radix-ui/react-slot": "^1.1.1",
     "lucide-react": "^0.473.0",
     "mermaid": "^11.4.1",
-    "personal-kb": "file:",
     "prismjs": "^1.29.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

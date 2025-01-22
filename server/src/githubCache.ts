@@ -9,9 +9,9 @@ if (!GITHUB_USER) {
 }
 
 const isDev = process.env.NODE_ENV !== 'production';
-const CACHE_DIR = isDev
-    ? path.join(process.cwd(), 'data')  // Development: store in server/data
-    : '/var/www/html/personal-kb/api/data';  // Production: store in web directory
+const CACHE_DIR = isDev 
+    ? path.join(process.cwd(), 'data')  // Development
+    : '/var/www/html/personal-kb/data';  // Production - store in web directory
 
 export class GitHubCache {
     private cacheDir: string;

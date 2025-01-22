@@ -137,13 +137,13 @@ cd server
 npm install
 npm run build
 
-# Create production directories
-sudo mkdir -p /var/www/html/personal-kb/{data,dist}
+# 1. Create all necessary directories
+sudo mkdir -p /var/www/html/personal-kb/{data,server}
 
-# Copy frontend files
+# 2. Copy frontend files (from dist) to main personal-kb directory
 sudo cp -r ../dist/* /var/www/html/personal-kb/
 
-# Copy server files
+# 3. Copy server files
 sudo cp -r dist package.json /var/www/html/personal-kb/server/
 cd /var/www/html/personal-kb/server
 npm install --production

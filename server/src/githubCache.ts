@@ -148,10 +148,16 @@ export class GitHubCache {
                             readme
                         );
                     } catch (error) {
-                        if ((error as any).status !== 404) {
-                            throw error;
+                        if ((error as any).status === 404) {
+                            console.log(`No README found for ${repo.name} (expected)`);
+                            // Write an empty or placeholder README
+                            await fs.writeFile(
+                                path.join(this.cacheDir, 'readmes', `${repo.name}.md`),
+                                '# No README available\n\nThis repository does not have a README file.'
+                            );
+                        } else {
+                            console.error(`Error fetching README for ${repo.name}:`, error);
                         }
-                        console.log(`No README found for ${repo.name}`);
                     }
                 } catch (error) {
                     console.error(`Error processing ${repo.name}:`, error);

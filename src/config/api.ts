@@ -1,7 +1,7 @@
 // src/config/api.ts
 export const API_BASE_URL = import.meta.env.DEV 
   ? 'http://localhost:3001/api'
-  : '/personal-kb-api';
+  : '/personal-kb/api';
 
 export async function fetchJSON<T>(endpoint: string): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${endpoint}`);

@@ -1,6 +1,6 @@
 # Personal Knowledge Base
 
-A React application for exploring and searching GitHub repositories, providing an organized view of repository metadata with README previews and language statistics.
+A React application for exploring and searching my GitHub repositories. Displays repository metadata, README previews, and language statistics.
 
 ## System Architecture
 
@@ -53,11 +53,15 @@ flowchart TD
 personal-kb/
 ├── src/                              # Frontend source
 │   ├── components/                   # React components
-│   │   ├── GitHubExplorer/           # Main repository explorer
-│   │   │   ├── index.tsx             # Repository listing and search
-│   │   │   └── LanguageStats.tsx     # Language distribution visualization
-│   │   └── MarkdownRenderer/         # README rendering component
-│   │       └── index.tsx             # Markdown with code highlighting & diagrams
+│   │   ├── GitHubExplorer/          # Main repository explorer
+│   │   │   ├── SearchBar.tsx        # Search input component
+│   │   │   ├── RepositoryCard.tsx   # Repository card component
+│   │   │   ├── LanguageStats.tsx    # Language distribution visualization
+│   │   │   ├── useGitHubData.ts     # Data fetching hook
+│   │   │   ├── useReadmeExpansion.ts# README handling hook
+│   │   │   └── index.tsx            # Main explorer component
+│   │   └── MarkdownRenderer/        # README rendering component
+│   │       └── index.tsx
 │   ├── config/
 │   │   └── api.ts                    # API configuration
 │   ├── styles/
@@ -69,13 +73,13 @@ personal-kb/
 ├── server/
 │   ├── src/
 │   │   ├── index.ts                  # Express server setup
-│   │   ├── githubCache.ts            # GitHub repository cache system
-│   │   └── types.ts                  # TypeScript type definitions
-│   ├── data/                         # Cache directory for GitHub data
-│   └── .env                          # Environment configuration
-├── index.html                        # HTML entry point
-├── tailwind.config.js                # Tailwind CSS configuration
-└── package.json                      # Project dependencies and scripts
+│   │   ├── githubCache.ts           # GitHub repository cache system
+│   │   └── types.ts                 # TypeScript type definitions
+│   ├── data/                        # Cache directory for GitHub data
+│   └── .env                         # Environment configuration
+├── index.html                       # HTML entry point
+├── tailwind.config.js               # Tailwind CSS configuration
+└── package.json                     # Project dependencies and scripts
 ```
 
 ## Development
@@ -112,8 +116,8 @@ npm run dev:all
 
 ## Production Deployment
 
-The application is deployed at [mbabbott.com/personal-kb](https://mbabbott.com/personal-kb)
-ayyyy
+The application is deployed at [https://mbabbott.com/personal-kb/](https://mbabbott.com/personal-kb/)
+
 ### Deployment Steps
 
 1. Environment Setup:
